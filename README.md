@@ -1,8 +1,10 @@
 # Abstriker
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/abstriker`. To experiment with that code, run `bin/console` for an interactive prompt.
+This gem adds `abstract` syntax. that is similar to Java's one.
+`abstract` modified method requires subclass implementation.
 
-TODO: Delete this and the text above, and describe your gem
+If subclass does not implement `abstract` method, raise `Abstriker::NotImplementedError`.
+`Abstriker::NotImplementedError` is curently subclass of `::NotImplementedError`.
 
 ## Installation
 
@@ -22,7 +24,97 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+class A1
+  extend Abstriker
+
+  abstract def foo
+  end
+end
+
+class A3 < A1
+  def foo
+  end
+end # => OK
+
+class A2 < A1
+end # => raise
+
+Class.new(A1) do
+end # => raise
+```
+
+### for Production
+If you want to disable Abstriker, write `Abstriker.disable = true` at first line.
+If Abstriker is disabled, TracePoint never runs, and so there is no overhead of VM instruction.
+
+### Examples
+
+#### include module
+
+```ruby
+module B1
+  extend Abstriker
+
+  abstract def foo
+  end
+end
+
+class B2
+  include B1
+end # => raise
+
+Module.new do
+  include B1
+end # => raise
+```
+
+#### extend module
+
+```ruby
+module C1
+  extend Abstriker
+
+  abstract def foo
+  end
+end
+
+class C3
+  extend C1
+
+  def self.foo
+  end
+end # => OK
+
+class C2
+  extend C1
+end # raise
+```
+
+#### singleton class
+
+```ruby
+class D1
+  extend Abstriker
+
+  class << self
+    abstract def foo
+    end
+  end
+end
+
+class D3 < D1
+  def self.foo
+  end
+end # => OK
+
+class D2 < D1
+end # => raise
+
+Class.new(D1) do
+end # => raise
+
+```
 
 ## Development
 
