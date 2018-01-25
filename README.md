@@ -1,4 +1,5 @@
 # Abstriker
+[![Build Status](https://travis-ci.org/joker1007/abstriker.svg?branch=master)](https://travis-ci.org/joker1007/abstriker)
 
 This gem adds `abstract` syntax. that is similar to Java's one.
 `abstract` modified method requires subclass implementation.
