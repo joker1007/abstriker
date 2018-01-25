@@ -12,6 +12,20 @@ module Abstriker
     end
   end
 
+  @disable = false
+
+  def self.disable=(v)
+    @disable = v
+  end
+
+  def self.disabled?
+    @disable
+  end
+
+  def self.enabled?
+    !disabled?
+  end
+
   def self.abstract_methods
     @abstract_methods ||= {}
   end
@@ -19,8 +33,10 @@ module Abstriker
   def self.extended(base)
     base.extend(SyntaxMethods)
     base.singleton_class.extend(SyntaxMethods)
-    base.extend(ModuleMethods) if base.is_a?(Module)
-    base.extend(ClassMethods) if base.is_a?(Class)
+    if enabled?
+      base.extend(ModuleMethods) if base.is_a?(Module)
+      base.extend(ClassMethods) if base.is_a?(Class)
+    end
   end
 
   module SyntaxMethods
@@ -45,6 +61,8 @@ module Abstriker
     end
 
     def check_abstract_methods(klass, block_count_offset = 0)
+      return if Abstriker.disabled?
+
       event_type = detect_event_type
 
       unless klass.instance_variable_get("@__abstract_trace_point")
@@ -79,6 +97,8 @@ module Abstriker
     end
 
     def check_abstract_singleton_methods(klass, block_count_offset = 0)
+      return if Abstriker.disabled?
+
       event_type = detect_event_type
 
       unless klass.instance_variable_get("@__abstract_singleton_trace_point")

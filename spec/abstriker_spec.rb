@@ -212,4 +212,31 @@ RSpec.describe Abstriker do
       expect(ex.abstract_method.name).to eq(:foo)
     end
   end
+
+  context "Abstriker.disable = true" do
+    context "abstract method is not implemented by subclass" do
+      around do |ex|
+        Abstriker.disable = true
+        ex.call
+        Abstriker.disable = false
+      end
+
+      it "does not raise", aggregate_failures: true do
+        class E1
+          extend Abstriker
+
+          abstract def foo
+          end
+        end
+
+        class E2 < E1
+        end
+
+        class E3 < E1
+          def foo
+          end
+        end
+      end
+    end
+  end
 end
