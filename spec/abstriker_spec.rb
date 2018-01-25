@@ -43,6 +43,34 @@ RSpec.describe Abstriker do
       expect(ex.subclass).to eq(A2)
       expect(ex.abstract_method.owner).to eq(A1)
       expect(ex.abstract_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        class A4 < A1
+          raise "err"
+
+          def foo
+          end
+        end
+      rescue => e
+        ex = nil
+      end
+
+      expect(e).to be_a(RuntimeError)
+
+      ex = nil
+      begin
+        Class.new(A1) do
+          raise "err"
+
+          def foo
+          end
+        end
+      rescue => e
+        ex = nil
+      end
+
+      expect(e).to be_a(RuntimeError)
     end
   end
 

@@ -38,9 +38,9 @@ module Abstriker
     def detect_event_type
       caller_info = caller_locations(3, 1)[0]
       if caller_info.label.match?(/block/)
-        [:end]
+        [:end, :raise]
       elsif caller_info.label.match?(/initialize/) || caller_info.label.match?(/new/)
-        [:b_call, :b_return]
+        [:b_call, :b_return, :raise]
       end
     end
 
@@ -51,6 +51,11 @@ module Abstriker
         block_count = block_count_offset
 
         tp = TracePoint.trace(*event_type) do |t|
+          if t.event == :raise
+            tp.disable
+            next
+          end
+
           block_count += 1 if t.event == :b_call
           block_count -= 1 if t.event == :b_return
 
@@ -80,6 +85,11 @@ module Abstriker
         block_count = block_count_offset
 
         tp = TracePoint.trace(*event_type) do |t|
+          if t.event == :raise
+            tp.disable
+            next
+          end
+
           block_count += 1 if t.event == :b_call
           block_count -= 1 if t.event == :b_return
 
