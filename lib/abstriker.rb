@@ -52,7 +52,6 @@ module Abstriker
     private
 
     def detect_event_type
-      pp caller_locations(1, 5)
       callers = caller_locations(2, 3)
       if callers[0].label == "inherited"
         caller_info = callers[2]
