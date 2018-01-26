@@ -269,12 +269,10 @@ RSpec.describe Abstriker do
           end
         end
 
-        Class.new do
+        c = Class.new do
           extend Foo
 
-          class_eval do
-            include Foo
-          end
+          self.include Foo
 
           def foo
           end
@@ -283,15 +281,46 @@ RSpec.describe Abstriker do
           end
         end
 
+        class Hoge < c
+        end
+
         Module.new do
+          include \
+            Foo
+
           class_eval do
-            include Foo
+            extend Foo
           end
 
           def foo
           end
+
+          def self.foo
+          end
         end
       }.not_to raise_error
+
+      ex = nil
+      begin
+        c = Class.new
+        c.send(:include, Foo)
+      rescue Abstriker::NotImplementedError => e
+        ex = e
+      end
+
+      expect(ex).to be_a(Abstriker::NotImplementedError)
+      expect(ex.abstract_method.name).to eq(:foo)
+
+      ex = nil
+      begin
+        c = Class.new
+        c.extend Foo
+      rescue Abstriker::NotImplementedError => e
+        ex = e
+      end
+
+      expect(ex).to be_a(Abstriker::NotImplementedError)
+      expect(ex.abstract_method.name).to eq(:foo)
     end
   end
 

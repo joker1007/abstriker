@@ -1,5 +1,6 @@
 require "abstriker/version"
 require "set"
+require "ripper"
 
 module Abstriker
   class NotImplementedError < NotImplementedError
@@ -9,6 +10,35 @@ module Abstriker
       super("#{abstract_method} is abstract, but not implemented by #{klass}")
       @subclass = klass
       @abstract_method = abstract_method
+    end
+  end
+
+  class SexpTraverser
+    def initialize(sexp)
+      @sexp = sexp
+    end
+
+    def traverse(current_sexp = nil, parent = nil, &block)
+      sexp = current_sexp || @sexp
+      first = sexp[0]
+      if first.is_a?(Symbol) # node
+        yield sexp, parent
+        args = Ripper::PARSER_EVENT_TABLE[first]
+        return if args.nil? || args.zero?
+
+        args.times do |i|
+          param = sexp[i + 1]
+          if param.is_a?(Array)
+            traverse(param, sexp, &block)
+          end
+        end
+      else # array
+        sexp.each do |n|
+          if n.is_a?(Array)
+            traverse(n, sexp, &block)
+          end
+        end
+      end
     end
   end
 
@@ -28,6 +58,10 @@ module Abstriker
 
   def self.abstract_methods
     @abstract_methods ||= {}
+  end
+
+  def self.sexps
+    @sexps ||= {}
   end
 
   def self.extended(base)
@@ -62,9 +96,31 @@ module Abstriker
           end
 
           t_self = t.self
+
+          target_outer_include = false
+          if t.event == :c_return && t_self == klass && t.method_id == :include
+            traverser = SexpTraverser.new(Abstriker.sexps[t.path])
+            traverser.traverse do |n, parent|
+              if n[0] == :@ident && n[1] == "include" && n[2][0] == t.lineno
+                if parent[0] == :command || parent[0] == :fcall
+                  # include Mod
+                elsif parent[0] == :command_call || parent[0] == :call
+                  if parent[1][0] == :var_ref && parent[1][1][0] == :@kw && parent[1][1][1] == "self"
+                    # self.include Mod
+                  else
+                    # unknown case
+                    target_outer_include = true
+                  end
+                else
+                  target_outer_include = true
+                end
+              end
+            end
+          end
+
           target_end_event = t_self == klass && t.event == :end
           target_c_return_event = (t_self == Class || t_self == Module) && t.event == :c_return && t.method_id == :new
-          if target_end_event || target_c_return_event
+          if target_end_event || target_c_return_event || target_outer_include
             klass.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.instance_method(fmeth_name)
@@ -95,9 +151,31 @@ module Abstriker
           end
 
           t_self = t.self
+
+          target_outer_extend = false
+          if t.event == :c_return && t_self == klass && t.method_id == :extend
+            traverser = SexpTraverser.new(Abstriker.sexps[t.path])
+            traverser.traverse do |n, parent|
+              if n[0] == :@ident && n[1] == "extend" && n[2][0] == t.lineno
+                if parent[0] == :command || parent[0] == :fcall
+                  # extend Mod
+                elsif parent[0] == :command_call || parent[0] == :call
+                  if parent[1][0] == :var_ref && parent[1][1][0] == :@kw && parent[1][1][1] == "self"
+                    # self.extend Mod
+                  else
+                    # unknown case
+                    target_outer_extend = true
+                  end
+                else
+                  target_outer_extend = true
+                end
+              end
+            end
+          end
+
           target_end_event = t_self == klass && t.event == :end
           target_c_return_event = (t_self == Class || t_self == Module) && t.event == :c_return && t.method_id == :new
-          if target_end_event || target_c_return_event
+          if target_end_event || target_c_return_event || target_outer_extend
             klass.singleton_class.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.singleton_class.instance_method(fmeth_name)
@@ -134,10 +212,26 @@ module Abstriker
     private
 
     def included(base)
+      super
+      return if Abstriker.disabled?
+
+      caller_info = caller_locations(1, 1)[0]
+
+      unless Abstriker.sexps[caller_info.absolute_path]
+        Abstriker.sexps[caller_info.absolute_path] ||= Ripper.sexp(File.read(caller_info.absolute_path))
+      end
       check_abstract_methods(base)
     end
 
     def extended(base)
+      super
+      return if Abstriker.disabled?
+
+      caller_info = caller_locations(1, 1)[0]
+
+      unless Abstriker.sexps[caller_info.absolute_path]
+        Abstriker.sexps[caller_info.absolute_path] ||= Ripper.sexp(File.read(caller_info.absolute_path))
+      end
       check_abstract_singleton_methods(base)
     end
   end
