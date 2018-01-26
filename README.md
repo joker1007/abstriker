@@ -1,5 +1,6 @@
 # Abstriker
 [![Build Status](https://travis-ci.org/joker1007/abstriker.svg?branch=master)](https://travis-ci.org/joker1007/abstriker)
+[![Gem Version](https://badge.fury.io/rb/abstriker.svg)](https://badge.fury.io/rb/abstriker)
 
 This gem adds `abstract` syntax. that is similar to Java's one.
 `abstract` modified method requires subclass implementation.
@@ -8,7 +9,13 @@ If subclass does not implement `abstract` method, raise `Abstriker::NotImplement
 `Abstriker::NotImplementedError` is currently subclass of `::NotImplementedError`.
 
 This gem is pseudo static code analyzer by `TracePoint` and `Ripper`.
+
 it detect abstract violation when class(module) is defined, not runtime.
+
+### My similar gems
+
+- [finalist](https://github.com/joker1007/finalist) (`final` implementation)
+- [overrider](https://github.com/joker1007/overrider) (`override` implementation)
 
 ## Installation
 
