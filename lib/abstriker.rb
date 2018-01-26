@@ -51,49 +51,20 @@ module Abstriker
   module HookBase
     private
 
-    def detect_event_type
-      callers = caller_locations(2, 3)
-      if callers[0].label == "inherited"
-        caller_info = callers[2]
-        if caller_info.label.match?(/initialize/) || caller_info.label.match?(/new/)
-          [:c_return, :b_call, :b_return, :raise]
-        else
-          [:end, :raise]
-        end
-      elsif callers[0].label == "included" || callers[0].label
-        caller_info = callers[2]
-        if caller_info.label.match?(/<class/) || caller_info.label.match?(/<module/)
-          [:end, :raise]
-        else
-          [:c_return, :b_call, :b_return, :raise]
-        end
-      else
-        raise "Not detect event_type"
-      end
-    end
-
-    def check_abstract_methods(klass, block_count_offset = 0)
+    def check_abstract_methods(klass)
       return if Abstriker.disabled?
 
-      event_type = detect_event_type
-
       unless klass.instance_variable_get("@__abstract_trace_point")
-        block_count = block_count_offset
-
-        tp = TracePoint.trace(*event_type) do |t|
+        tp = TracePoint.trace(:end, :c_return, :raise) do |t|
           if t.event == :raise
             tp.disable
             next
           end
 
-          block_count += 1 if t.event == :b_call
-          block_count -= 1 if t.event == :b_return
-
           t_self = t.self
           target_end_event = t_self == klass && t.event == :end
-          target_b_return_event = t_self == klass && t.event == :b_return && block_count.zero?
-          target_c_return_event = t_self == Class && t.event == :c_return && t.method_id == :new
-          if target_end_event || target_b_return_event || target_c_return_event
+          target_c_return_event = (t_self == Class || t_self == Module) && t.event == :c_return && t.method_id == :new
+          if target_end_event || target_c_return_event
             klass.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.instance_method(fmeth_name)
@@ -112,28 +83,21 @@ module Abstriker
       end
     end
 
-    def check_abstract_singleton_methods(klass, block_count_offset = 0)
+    def check_abstract_singleton_methods(klass)
       return if Abstriker.disabled?
 
-      event_type = detect_event_type
-
       unless klass.instance_variable_get("@__abstract_singleton_trace_point")
-        block_count = block_count_offset
 
-        tp = TracePoint.trace(*event_type) do |t|
+        tp = TracePoint.trace(:end, :c_return, :raise) do |t|
           if t.event == :raise
             tp.disable
             next
           end
 
-          block_count += 1 if t.event == :b_call
-          block_count -= 1 if t.event == :b_return
-
           t_self = t.self
           target_end_event = t_self == klass && t.event == :end
-          target_b_return_event = t_self == klass && t.event == :b_return && block_count.zero?
-          target_c_return_event = t_self == Class && t.event == :c_return && t.method_id == :new
-          if target_end_event || target_b_return_event || target_c_return_event
+          target_c_return_event = (t_self == Class || t_self == Module) && t.event == :c_return && t.method_id == :new
+          if target_end_event || target_c_return_event
             klass.singleton_class.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.singleton_class.instance_method(fmeth_name)
@@ -170,11 +134,11 @@ module Abstriker
     private
 
     def included(base)
-      check_abstract_methods(base, 1)
+      check_abstract_methods(base)
     end
 
     def extended(base)
-      check_abstract_singleton_methods(base, 1)
+      check_abstract_singleton_methods(base)
     end
   end
 end

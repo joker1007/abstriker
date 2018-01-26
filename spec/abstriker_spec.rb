@@ -258,4 +258,41 @@ RSpec.describe Abstriker do
       end
     end
   end
+
+  context "complex pattern" do
+    it do
+      expect {
+        module Foo
+          extend Abstriker
+
+          abstract def foo
+          end
+        end
+
+        Class.new do
+          extend Foo
+
+          class_eval do
+            include Foo
+          end
+
+          def foo
+          end
+
+          def self.foo
+          end
+        end
+
+        Module.new do
+          class_eval do
+            include Foo
+          end
+
+          def foo
+          end
+        end
+      }.not_to raise_error
+    end
+  end
+
 end
