@@ -52,11 +52,24 @@ module Abstriker
     private
 
     def detect_event_type
-      caller_info = caller_locations(3, 1)[0]
-      if caller_info.label.match?(/block/)
-        [:end, :raise]
-      elsif caller_info.label.match?(/initialize/) || caller_info.label.match?(/new/)
-        [:c_return, :b_call, :b_return, :raise]
+      pp caller_locations(1, 5)
+      callers = caller_locations(2, 3)
+      if callers[0].label == "inherited"
+        caller_info = callers[2]
+        if caller_info.label.match?(/initialize/) || caller_info.label.match?(/new/)
+          [:c_return, :b_call, :b_return, :raise]
+        else
+          [:end, :raise]
+        end
+      elsif callers[0].label == "included" || callers[0].label
+        caller_info = callers[2]
+        if caller_info.label.match?(/<class/) || caller_info.label.match?(/<module/)
+          [:end, :raise]
+        else
+          [:c_return, :b_call, :b_return, :raise]
+        end
+      else
+        raise "Not detect event_type"
       end
     end
 

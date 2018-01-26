@@ -1,4 +1,16 @@
 RSpec.describe Abstriker do
+  it do
+    module Foo
+      extend Abstriker
+
+      abstract def foo
+      end
+    end
+
+    m = Module.new
+    m.include(Foo)
+  end
+
   context "abstract method is not implemented by subclass" do
     it "raise Abstriker::NotImplementedError", aggregate_failures: true do
       ex = nil
