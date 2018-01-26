@@ -7,6 +7,9 @@ This gem adds `abstract` syntax. that is similar to Java's one.
 If subclass does not implement `abstract` method, raise `Abstriker::NotImplementedError`.
 `Abstriker::NotImplementedError` is curently subclass of `::NotImplementedError`.
 
+This gem is pseudo static code analyzer by `TracePoint` and `Ripper`.
+it detect abstract violation when class(module) is defined, not runtime.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -49,29 +52,6 @@ end # => raise
 If you want to disable Abstriker, write `Abstriker.disable = true` at first line.
 If Abstriker is disabled, TracePoint never runs, and so there is no overhead of VM instruction.
 
-### Caution
-
-Must not call `include` or `extend` abstracted module outer class definition.
-
-ex.
-
-```ruby
-module A1
-  extend Abstriker
-
-  abstract def foo
-  end
-end
-
-class A2;
-end
-
-A2.include(A1) # => Don't do this
-```
-
-This case leaves enabled TracePoint.
-It is very high overhead.
-
 ### Examples
 
 #### include module
@@ -91,6 +71,21 @@ end # => raise
 Module.new do
   include B1
 end # => raise
+```
+
+#### include module outer class definition
+```ruby
+module A1
+  extend Abstriker
+
+  abstract def foo
+  end
+end
+
+class A2;
+end
+
+A2.include(A1) # => raise
 ```
 
 #### extend module
