@@ -5,7 +5,7 @@ This gem adds `abstract` syntax. that is similar to Java's one.
 `abstract` modified method requires subclass implementation.
 
 If subclass does not implement `abstract` method, raise `Abstriker::NotImplementedError`.
-`Abstriker::NotImplementedError` is curently subclass of `::NotImplementedError`.
+`Abstriker::NotImplementedError` is currently subclass of `::NotImplementedError`.
 
 This gem is pseudo static code analyzer by `TracePoint` and `Ripper`.
 it detect abstract violation when class(module) is defined, not runtime.
