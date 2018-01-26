@@ -56,7 +56,7 @@ module Abstriker
       if caller_info.label.match?(/block/)
         [:end, :raise]
       elsif caller_info.label.match?(/initialize/) || caller_info.label.match?(/new/)
-        [:b_call, :b_return, :raise]
+        [:c_return, :b_call, :b_return, :raise]
       end
     end
 
@@ -77,7 +77,11 @@ module Abstriker
           block_count += 1 if t.event == :b_call
           block_count -= 1 if t.event == :b_return
 
-          if t.self == klass && (t.event == :end || t.event == :b_return && block_count.zero?)
+          t_self = t.self
+          target_end_event = t_self == klass && t.event == :end
+          target_b_return_event = t_self == klass && t.event == :b_return && block_count.zero?
+          target_c_return_event = t_self == Class && t.event == :c_return && t.method_id == :new
+          if target_end_event || target_b_return_event || target_c_return_event
             klass.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.instance_method(fmeth_name)
@@ -113,7 +117,11 @@ module Abstriker
           block_count += 1 if t.event == :b_call
           block_count -= 1 if t.event == :b_return
 
-          if t.self == klass && (t.event == :end || t.event == :b_return && block_count.zero?)
+          t_self = t.self
+          target_end_event = t_self == klass && t.event == :end
+          target_b_return_event = t_self == klass && t.event == :b_return && block_count.zero?
+          target_c_return_event = t_self == Class && t.event == :c_return && t.method_id == :new
+          if target_end_event || target_b_return_event || target_c_return_event
             klass.singleton_class.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.singleton_class.instance_method(fmeth_name)

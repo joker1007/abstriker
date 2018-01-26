@@ -16,6 +16,11 @@ RSpec.describe Abstriker do
         ex = e
       end
 
+      expect(ex).to be_a(Abstriker::NotImplementedError)
+      expect(ex.subclass).to eq(A2)
+      expect(ex.abstract_method.owner).to eq(A1)
+      expect(ex.abstract_method.name).to eq(:foo)
+
       class A3 < A1
         def foo
         end
@@ -42,11 +47,6 @@ RSpec.describe Abstriker do
         end
       end
 
-      expect(ex).to be_a(Abstriker::NotImplementedError)
-      expect(ex.subclass).to eq(A2)
-      expect(ex.abstract_method.owner).to eq(A1)
-      expect(ex.abstract_method.name).to eq(:foo)
-
       ex = nil
       begin
         class A4 < A1
@@ -56,10 +56,10 @@ RSpec.describe Abstriker do
           end
         end
       rescue => e
-        ex = nil
+        ex = e
       end
 
-      expect(e).to be_a(RuntimeError)
+      expect(ex).to be_a(RuntimeError)
 
       ex = nil
       begin
@@ -70,10 +70,19 @@ RSpec.describe Abstriker do
           end
         end
       rescue => e
-        ex = nil
+        ex = e
       end
 
-      expect(e).to be_a(RuntimeError)
+      expect(ex).to be_a(RuntimeError)
+
+      ex = nil
+      begin
+        Class.new(A1)
+      rescue Abstriker::NotImplementedError => e
+        ex = e
+      end
+
+      expect(ex).to be_a(Abstriker::NotImplementedError)
     end
   end
 
