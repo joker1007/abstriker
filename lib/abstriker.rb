@@ -81,7 +81,7 @@ module Abstriker
             klass.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.instance_method(fmeth_name)
-                unless meth&.owner == klass
+                if meth.owner == mod
                   tp.disable
                   klass.instance_variable_set("@__abstract_trace_point", nil)
                   raise Abstriker::NotImplementedError.new(klass, meth)
@@ -117,7 +117,7 @@ module Abstriker
             klass.singleton_class.ancestors.drop(1).each do |mod|
               Abstriker.abstract_methods[mod]&.each do |fmeth_name|
                 meth = klass.singleton_class.instance_method(fmeth_name)
-                unless meth&.owner == klass.singleton_class
+                if meth.owner == mod
                   tp.disable
                   klass.instance_variable_set("@__abstract_singleton_trace_point", nil)
                   raise Abstriker::NotImplementedError.new(klass, meth)

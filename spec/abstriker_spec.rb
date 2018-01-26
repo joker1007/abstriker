@@ -21,6 +21,9 @@ RSpec.describe Abstriker do
         end
       end
 
+      class A5 < A3
+      end
+
       Class.new(A1) do
         pr = proc do
         end
@@ -99,11 +102,18 @@ RSpec.describe Abstriker do
         end
       end
 
-      class B4
+      module B4
         def foo
         end
 
         include B1
+      end
+
+      class B5 < B3
+      end
+
+      module B6
+        include B4
       end
 
       Module.new do
