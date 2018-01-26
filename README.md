@@ -49,6 +49,29 @@ end # => raise
 If you want to disable Abstriker, write `Abstriker.disable = true` at first line.
 If Abstriker is disabled, TracePoint never runs, and so there is no overhead of VM instruction.
 
+### Caution
+
+Must not call `include` or `extend` abstracted module outer class definition.
+
+ex.
+
+```ruby
+module A1
+  extend Abstriker
+
+  abstract def foo
+  end
+end
+
+class A2;
+end
+
+A2.include(A1) # => Don't do this
+```
+
+This case leaves enabled TracePoint.
+It is very high overhead.
+
 ### Examples
 
 #### include module
