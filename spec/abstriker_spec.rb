@@ -190,6 +190,19 @@ RSpec.describe Abstriker do
       expect(ex.subclass).to eq(C2)
       expect(ex.abstract_method.owner).to eq(C1)
       expect(ex.abstract_method.name).to eq(:foo)
+
+      ex = nil
+      string = "foo"
+      begin
+        string.extend(C1)
+      rescue Abstriker::NotImplementedError => e
+        ex = e
+      end
+
+      expect(ex).to be_a(Abstriker::NotImplementedError)
+      expect(ex.subclass).to eq(string)
+      expect(ex.abstract_method.owner).to eq(C1)
+      expect(ex.abstract_method.name).to eq(:foo)
     end
   end
 
