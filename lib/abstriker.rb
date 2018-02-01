@@ -78,12 +78,12 @@ module Abstriker
 
     def abstract(symbol)
       method_set = Abstriker.abstract_methods[self] ||= Set.new
-      method_set.add(symbol)
+      method_set.add(instance_method(symbol))
     end
 
     def abstract_singleton_method(symbol)
       method_set = Abstriker.abstract_methods[singleton_class] ||= Set.new
-      method_set.add(symbol)
+      method_set.add(singleton_class.instance_method(symbol))
     end
   end
 
@@ -132,12 +132,12 @@ module Abstriker
           include_at_outer = call_at_outer_class_definition?(klass, t, :include)
           if target_class_end || target_class_new_end || include_at_outer
             klass.ancestors.drop(1).each do |mod|
-              Abstriker.abstract_methods[mod]&.each do |fmeth_name|
-                meth = klass.instance_method(fmeth_name)
-                if meth.owner == mod
+              Abstriker.abstract_methods[mod]&.each do |fmeth|
+                meth = klass.instance_method(fmeth.name) rescue nil
+                if meth.nil? || meth.owner == mod
                   tp.disable
                   klass.instance_variable_set("@__abstract_trace_point", nil)
-                  raise Abstriker::NotImplementedError.new(klass, meth)
+                  raise Abstriker::NotImplementedError.new(klass, fmeth)
                 end
               end
             end
@@ -148,12 +148,12 @@ module Abstriker
           extend_at_outer = call_at_outer_class_definition?(klass, t, :extend)
           if target_class_end || target_class_new_end || extend_at_outer
             klass.singleton_class.ancestors.drop(1).each do |mod|
-              Abstriker.abstract_methods[mod]&.each do |fmeth_name|
-                meth = klass.singleton_class.instance_method(fmeth_name)
-                if meth.owner == mod
+              Abstriker.abstract_methods[mod]&.each do |fmeth|
+                meth = klass.singleton_class.instance_method(fmeth.name) rescue nil
+                if meth.nil? || meth.owner == mod
                   tp.disable
                   klass.instance_variable_set("@__abstract_trace_point", nil)
-                  raise Abstriker::NotImplementedError.new(klass, meth)
+                  raise Abstriker::NotImplementedError.new(klass, fmeth)
                 end
               end
             end
