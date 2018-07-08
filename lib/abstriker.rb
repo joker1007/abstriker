@@ -68,8 +68,8 @@ module Abstriker
     base.extend(SyntaxMethods)
     base.singleton_class.extend(SyntaxMethods)
     if enabled?
-      base.extend(ModuleMethods) if base.is_a?(Module)
-      base.extend(ClassMethods) if base.is_a?(Class)
+      base.extend(ModuleMethods) if base.instance_of?(Module)
+      base.extend(ClassMethods) if base.instance_of?(Class)
     end
   end
 
